@@ -1,0 +1,75 @@
+project:
+  name: superalloy-ml
+  random_state: 42
+
+data:
+  source: synthetic
+  synthetic_path: data/processed/synthetic_superalloy.csv
+  external_path: data/raw/my_superalloy_data.csv
+  n_samples: 1200
+  test_size: 0.2
+
+target:
+  regression: creep_log_life_h
+  classification: creep_life_class
+
+columns:
+  composition:
+    - Ni
+    - Co
+    - Cr
+    - Al
+    - Ti
+    - Ta
+    - W
+    - Mo
+    - Re
+    - Nb
+    - Hf
+    - C
+    - B
+
+  process:
+    - solution_temp_c
+    - solution_time_h
+    - aging_temp_c
+    - aging_time_h
+    - cooling_rate_c_s
+
+  test:
+    - test_temp_c
+    - stress_mpa
+
+  regression_targets:
+    - yield_strength_mpa
+    - tensile_strength_mpa
+    - creep_log_life_h
+    - oxidation_mass_gain_mg_cm2
+
+  classification_targets:
+    - creep_life_class
+
+features:
+  normalize_composition: true
+  add_composition_features: true
+  add_physical_descriptors: true
+  add_processing_features: true
+  add_interaction_features: true
+
+preprocessing:
+  numeric_impute_strategy: median
+  categorical_impute_strategy: most_frequent
+  scaler: standard
+
+modeling:
+  cv_folds: 5
+  use_xgboost: true
+  save_models: true
+  generate_figures: true
+
+outputs:
+  base_dir: outputs
+  model_dir: outputs/models
+  report_dir: outputs/reports
+  figure_dir: outputs/figures
+  prediction_dir: outputs/predictions
