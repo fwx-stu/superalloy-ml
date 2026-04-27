@@ -80,7 +80,8 @@ def weighted_std_property(
     values = np.array([property_map[element] for element in elements], dtype=float)
 
     mean = weights @ values
-    variance = weights @ ((values[None, :] - mean[:, None]) ** 2)
+    diff_squared = (values[None, :] - mean[:, None]) ** 2
+    variance = np.sum(weights * diff_squared, axis=1)
 
     return pd.Series(np.sqrt(variance), index=df.index)
 

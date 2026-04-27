@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-name", default=None, help="指定模型名称。")
     parser.add_argument("--max-samples", type=int, default=200, help="SHAP 最大样本数量。")
     parser.add_argument("--skip-shap", action="store_true", help="跳过 SHAP，只运行其他解释方法。")
+    parser.add_argument("--no-xgboost", action="store_true", help="不使用 XGBoost。")
     return parser.parse_args()
 
 
@@ -31,9 +32,9 @@ def main() -> None:
     from superalloy_ml.data import load_configured_dataset, read_table, split_features_targets
     from superalloy_ml.explainability import (
         compute_permutation_importance,
-        compute_shap_summary,
         get_builtin_feature_importance,
         plot_importance_bar,
+        plot_shap_summary_plots,
         save_explainability_tables,
     )
     from superalloy_ml.features import make_features
@@ -80,6 +81,8 @@ def main() -> None:
     X, y = split_features_targets(df, target=target)
 
     include_xgboost = bool(modeling_config.get("use_xgboost", True))
+    include_xgboost = include_xgboost and not args.no_xgboost
+
     random_state = int(project_config.get("random_state", 42))
     test_size = float(data_config.get("test_size", 0.2))
 
@@ -129,12 +132,17 @@ def main() -> None:
         model=models[model_name],
         scaler=preprocessing_config.get("scaler", "standard"),
         numeric_strategy=preprocessing_config.get("numeric_impute_strategy", "median"),
-        categorical_strategy=preprocessing_config.get("categorical_impute_strategy", "most_frequent"),
+        categorical_strategy=preprocessing_config.get(
+            "categorical_impute_strategy",
+            "most_frequent",
+        ),
     )
 
     pipeline.fit(X_train, y_train)
 
     output_dirs = create_output_dirs(ROOT / output_config.get("base_dir", "outputs"))
+    explain_dir = output_dirs["reports"] / "explainability"
+    figure_dir = output_dirs["figures"] / "explainability"
 
     builtin_table = get_builtin_feature_importance(
         model=pipeline,
@@ -159,17 +167,17 @@ def main() -> None:
 
     if not args.skip_shap:
         try:
-            shap_table = compute_shap_summary(
+            shap_table = plot_shap_summary_plots(
                 model=pipeline,
                 X=X_test,
+                summary_path=figure_dir / "shap_summary.png",
+                bar_path=figure_dir / "shap_bar.png",
                 max_samples=args.max_samples,
+                max_display=20,
             )
         except Exception as exc:
             print("SHAP 分析未完成，流程继续运行。")
             print(f"原因: {exc}")
-
-    explain_dir = output_dirs["reports"] / "explainability"
-    figure_dir = output_dirs["figures"] / "explainability"
 
     save_explainability_tables(
         output_dir=explain_dir,

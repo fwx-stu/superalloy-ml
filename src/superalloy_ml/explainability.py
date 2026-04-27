@@ -266,3 +266,143 @@ def save_explainability_tables(
         saved_paths["shap"] = path
 
     return saved_paths
+
+def compute_shap_explanation(
+    model: Any,
+    X: pd.DataFrame,
+    max_samples: int = 200,
+):
+    """
+    计算 SHAP Explanation 对象。
+
+    返回：
+    - explanation
+    - 转换后的特征矩阵
+    - 特征名
+    """
+    import shap
+
+    estimator = get_pipeline_model(model)
+    feature_names = get_feature_names(model, X)
+
+    if estimator is None:
+        raise ValueError("无法从模型中获取最终估计器。")
+
+    X_sample = X.head(max_samples).copy()
+    X_transformed = transform_features_for_model(model, X_sample)
+
+    if len(feature_names) != X_transformed.shape[1]:
+        feature_names = [f"feature_{i}" for i in range(X_transformed.shape[1])]
+
+    explainer = shap.Explainer(
+        estimator,
+        X_transformed,
+        feature_names=feature_names,
+    )
+    explanation = explainer(X_transformed)
+
+    return explanation, X_transformed, feature_names
+
+
+def shap_explanation_to_importance_table(
+    explanation,
+    feature_names: list[str],
+) -> pd.DataFrame:
+    """
+    将 SHAP Explanation 转换为平均绝对 SHAP 重要性表。
+    """
+    values = np.asarray(explanation.values)
+
+    if values.ndim == 3:
+        mean_abs = np.mean(np.abs(values), axis=(0, 2))
+    elif values.ndim == 2:
+        mean_abs = np.mean(np.abs(values), axis=0)
+    elif values.ndim == 1:
+        mean_abs = np.abs(values)
+    else:
+        raise ValueError(f"无法处理的 SHAP values 维度: {values.shape}")
+
+    n = min(len(feature_names), len(mean_abs))
+
+    table = pd.DataFrame(
+        {
+            "feature": feature_names[:n],
+            "mean_abs_shap": mean_abs[:n],
+        }
+    )
+
+    return table.sort_values("mean_abs_shap", ascending=False).reset_index(drop=True)
+
+
+def plot_shap_summary_plots(
+    model: Any,
+    X: pd.DataFrame,
+    summary_path: str | Path,
+    bar_path: str | Path,
+    max_samples: int = 200,
+    max_display: int = 20,
+) -> pd.DataFrame:
+    """
+    生成 SHAP 原生图。
+
+    输出：
+    - SHAP summary dot 图
+    - SHAP summary bar 图
+    - SHAP 平均绝对贡献表
+    """
+    import shap
+
+    summary_path = Path(summary_path)
+    bar_path = Path(bar_path)
+
+    ensure_dir(summary_path.parent)
+    ensure_dir(bar_path.parent)
+
+    explanation, X_transformed, feature_names = compute_shap_explanation(
+        model=model,
+        X=X,
+        max_samples=max_samples,
+    )
+
+    values = np.asarray(explanation.values)
+
+    if values.ndim == 3:
+        values_for_plot = values[:, :, 0]
+    elif values.ndim == 2:
+        values_for_plot = values
+    elif values.ndim == 1:
+        values_for_plot = values.reshape(-1, 1)
+        X_transformed = X_transformed.reshape(-1, 1)
+        feature_names = feature_names[:1]
+    else:
+        raise ValueError(f"无法处理的 SHAP values 维度: {values.shape}")
+
+    plt.figure()
+    shap.summary_plot(
+        values_for_plot,
+        X_transformed,
+        feature_names=feature_names,
+        show=False,
+        max_display=max_display,
+    )
+    plt.tight_layout()
+    plt.savefig(summary_path, dpi=160, bbox_inches="tight")
+    plt.close()
+
+    plt.figure()
+    shap.summary_plot(
+        values_for_plot,
+        X_transformed,
+        feature_names=feature_names,
+        plot_type="bar",
+        show=False,
+        max_display=max_display,
+    )
+    plt.tight_layout()
+    plt.savefig(bar_path, dpi=160, bbox_inches="tight")
+    plt.close()
+
+    return shap_explanation_to_importance_table(
+        explanation=explanation,
+        feature_names=feature_names,
+    )
