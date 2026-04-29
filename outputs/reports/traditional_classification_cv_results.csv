@@ -1,0 +1,8 @@
+model_name,task,scoring,cv_mean,cv_std
+logistic_regression,classification,accuracy,0.8466666666666667,0.02098279718669028
+extra_trees_classifier,classification,accuracy,0.8166666666666667,0.02788866755113583
+gradient_boosting_classifier,classification,accuracy,0.8158333333333333,0.042360883423796104
+random_forest_classifier,classification,accuracy,0.7975,0.024944382578492966
+svm_classifier,classification,accuracy,0.7891666666666668,0.020849993338661315
+decision_tree_classifier,classification,accuracy,0.7433333333333334,0.026562295750848695
+knn_classifier,classification,accuracy,0.6525,0.03501983564908448

@@ -1,0 +1,3 @@
+algorithm,n_components,explained_variance_ratio,explained_variance_ratio_sum,perplexity,kl_divergence
+pca,2,"[0.14922279674357036, 0.11588143849886552]",0.26510423524243587,,
+tsne,2,,,30.0,2.125702142715454

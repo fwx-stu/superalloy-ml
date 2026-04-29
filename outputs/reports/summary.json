@@ -1,0 +1,35 @@
+{
+  "best_regression_model": {
+    "model_name": "linear_regression",
+    "task": "regression",
+    "train_size": 960,
+    "test_size": 240,
+    "training_time_sec": 0.0310559272766113,
+    "mae": 0.1925167655132396,
+    "mse": 0.0612899628452123,
+    "rmse": 0.2475680973898138,
+    "r2": 0.9329301592151034,
+    "mape": 0.027883074119611,
+    "max_error": 0.7530448043181348
+  },
+  "best_classification_model": {
+    "model_name": "logistic_regression",
+    "task": "classification",
+    "train_size": 960,
+    "test_size": 240,
+    "training_time_sec": 0.0413331985473632,
+    "accuracy": 0.8583333333333333,
+    "precision": 0.8580837707111248,
+    "recall": 0.8580837707111248,
+    "f1": 0.8580837707111248
+  },
+  "available_reports": {
+    "traditional_regression_test_results": true,
+    "traditional_regression_cv_results": true,
+    "traditional_classification_test_results": true,
+    "traditional_classification_cv_results": true,
+    "clustering_summary": true,
+    "dimensionality_reduction_summary": true,
+    "deep_learning_results": false
+  }
+}
